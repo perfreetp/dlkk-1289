@@ -7,6 +7,9 @@ import type {
   CareerValue,
   DailyTask,
   AbilityGap,
+  PreferenceAnswer,
+  TopJobSnapshot,
+  ActionPlanSnapshot,
 } from '@/types';
 import { questions } from '@/data/questions';
 import { jobs as mockJobs } from '@/data/jobs';
@@ -49,7 +52,7 @@ interface CareerStore {
 
 const DEFAULT_VALUES: CareerValue[] = ['achievement', 'stability', 'creativity', 'wealth', 'impact', 'balance'];
 
-const STORE_VERSION = 1;
+const STORE_VERSION = 2;
 
 function isValidLikertValue(v: unknown): v is number {
   return typeof v === 'number' && !Number.isNaN(v) && Number.isFinite(v) && v >= 1 && v <= 5;
@@ -184,15 +187,41 @@ export const useCareerStore = create<CareerStore>()(
           const interest: DimensionScores = calculateInterestScores(state.answers, questions);
           const ability: AbilityScores = calculateAbilityScores(state.answers, questions);
           const preferences: Record<string, number> = {};
+          const preferenceAnswers: PreferenceAnswer[] = [];
+
           questions
             .filter((q) => q.section === 'preference')
             .forEach((q) => {
-              if (isValidLikertValue(state.answers[q.id])) {
-                preferences[q.id] = state.answers[q.id];
+              const val = state.answers[q.id];
+              if (typeof val === 'number' && !Number.isNaN(val) && val >= 1 && val <= 5) {
+                preferences[q.id] = val;
+                const selected = q.options.find((o) => o.value === val);
+                preferenceAnswers.push({
+                  questionId: q.id,
+                  questionText: q.text,
+                  selectedText: selected ? selected.text : '',
+                  value: val,
+                });
               }
             });
 
           const careerTypes = getTopCareerTypes(interest);
+
+          const matchedJobs = matchJobs(mockJobs, {
+            interest,
+            ability,
+            values: isValidValueRanking(state.valueRanking) ? state.valueRanking : DEFAULT_VALUES,
+            preferences,
+            careerTypes,
+          } as Assessment);
+
+          const topJobs: TopJobSnapshot[] = matchedJobs.slice(0, 3).map((j) => ({
+            id: j.id,
+            title: j.title,
+            industry: j.industry,
+            matchScore: j.matchScore,
+            salaryRange: j.salaryRange,
+          }));
 
           const assessment: Assessment = {
             id: `assess-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -201,7 +230,10 @@ export const useCareerStore = create<CareerStore>()(
             ability,
             values: isValidValueRanking(state.valueRanking) ? state.valueRanking : DEFAULT_VALUES,
             preferences,
+            preferenceAnswers,
             careerTypes,
+            topJobs,
+            actionPlan: null,
           };
 
           const currentHistory = Array.isArray(state.history) ? state.history : [];
@@ -279,7 +311,26 @@ export const useCareerStore = create<CareerStore>()(
         try {
           const gaps = calculateAbilityGaps(state.currentAssessment.ability, job);
           const tasks = generateDailyPlan(gaps, 30);
-          set({ abilityGaps: gaps, dailyTasks: tasks, targetJobId: jobId });
+          const planSnapshot: ActionPlanSnapshot = {
+            targetJobId: job.id,
+            targetJobTitle: job.title,
+            abilityGaps: gaps,
+            dailyTasks: tasks,
+          };
+          const updatedAssessment: Assessment = {
+            ...state.currentAssessment,
+            actionPlan: planSnapshot,
+          };
+          const updatedHistory = (Array.isArray(state.history) ? state.history : []).map((h) =>
+            h && h.id === updatedAssessment.id ? updatedAssessment : h
+          );
+          set({
+            currentAssessment: updatedAssessment,
+            history: updatedHistory,
+            abilityGaps: gaps,
+            dailyTasks: tasks,
+            targetJobId: jobId,
+          });
         } catch (e) {
           console.error('generateActionPlan failed:', e);
         }
@@ -288,11 +339,21 @@ export const useCareerStore = create<CareerStore>()(
       toggleTaskComplete: (taskId) =>
         set((state) => {
           if (typeof taskId !== 'string' || !taskId) return {};
-          return {
-            dailyTasks: state.dailyTasks.map((t) =>
-              t && t.id === taskId ? { ...t, completed: !t.completed } : t
-            ),
-          };
+          const updatedTasks = state.dailyTasks.map((t) =>
+            t && t.id === taskId ? { ...t, completed: !t.completed } : t
+          );
+          let updatedAssessment = state.currentAssessment;
+          let updatedHistory = state.history;
+          if (updatedAssessment && updatedAssessment.actionPlan) {
+            updatedAssessment = {
+              ...updatedAssessment,
+              actionPlan: { ...updatedAssessment.actionPlan, dailyTasks: updatedTasks },
+            };
+            updatedHistory = (Array.isArray(state.history) ? state.history : []).map((h) =>
+              h && h.id === updatedAssessment!.id ? updatedAssessment! : h
+            );
+          }
+          return { dailyTasks: updatedTasks, currentAssessment: updatedAssessment, history: updatedHistory };
         }),
 
       getMatchedJobs: () => {

@@ -43,6 +43,28 @@ export interface Job {
   preferredValues: CareerValue[];
 }
 
+export interface PreferenceAnswer {
+  questionId: string;
+  questionText: string;
+  selectedText: string;
+  value: number;
+}
+
+export interface TopJobSnapshot {
+  id: string;
+  title: string;
+  industry: string;
+  matchScore: number;
+  salaryRange: string;
+}
+
+export interface ActionPlanSnapshot {
+  targetJobId: string;
+  targetJobTitle: string;
+  abilityGaps: AbilityGap[];
+  dailyTasks: DailyTask[];
+}
+
 export interface Assessment {
   id: string;
   createdAt: string;
@@ -50,7 +72,10 @@ export interface Assessment {
   ability: AbilityScores;
   values: CareerValue[];
   preferences: Record<string, number>;
+  preferenceAnswers: PreferenceAnswer[];
   careerTypes: { type: string; score: number; pct: number; label: string }[];
+  topJobs: TopJobSnapshot[];
+  actionPlan: ActionPlanSnapshot | null;
 }
 
 export type DailyTaskCategory = 'learn' | 'practice' | 'network' | 'reflect';

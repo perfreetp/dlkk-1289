@@ -11,6 +11,7 @@ import {
   Briefcase,
   BookOpen,
   Heart,
+  Compass,
 } from 'lucide-react';
 import { useCareerStore } from '@/store/useCareerStore';
 import RadarChart from '@/components/charts/RadarChart';
@@ -162,6 +163,22 @@ export default function ReportPage() {
           ))}
         </div>
       </div>
+
+      {currentAssessment.preferenceAnswers && currentAssessment.preferenceAnswers.length > 0 && (
+        <div className="card p-7 mb-8 animate-slide-up">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-700 mb-5">
+            <Compass size={16} className="text-sun-500" /> 工作偏好总结
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentAssessment.preferenceAnswers.map((pa) => (
+              <div key={pa.questionId} className="bg-ink-50 rounded-xl p-4">
+                <div className="text-xs text-ink-500 mb-2">{pa.questionText}</div>
+                <div className="font-semibold text-ink-900 text-sm">{pa.selectedText}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-5">
