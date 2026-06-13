@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    background-color: #FAF9F6;
+    color: #1E293B;
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .paper-bg {
+    background-color: #FAF9F6;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(245, 158, 11, 0.06) 0%, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+  }
+  .card {
+    @apply bg-white rounded-xl2 shadow-card border border-ink-100;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-semibold text-sm transition-all duration-200 select-none;
+  }
+  .btn-primary {
+    @apply btn bg-ink-900 text-white hover:bg-ink-800 hover:shadow-lift hover:-translate-y-0.5 active:translate-y-0;
+  }
+  .btn-sun {
+    @apply btn bg-sun-500 text-white hover:bg-sun-400 hover:shadow-lift hover:-translate-y-0.5 active:translate-y-0;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-900 border border-ink-300 hover:bg-ink-100;
+  }
+  .btn-soft {
+    @apply btn bg-ink-100 text-ink-900 hover:bg-ink-300/50;
+  }
+  .tag {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  }
+  .input-field {
+    @apply w-full rounded-xl px-4 py-3 bg-white border border-ink-300 text-ink-900 placeholder:text-ink-500 focus:outline-none focus:ring-0 focus:border-sun-500 focus:shadow-glow transition-all;
+  }
+  .progress-bar {
+    @apply h-2 rounded-full bg-ink-100 overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-700 ease-out;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .noise {
+    position: relative;
+  }
+  .noise::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
