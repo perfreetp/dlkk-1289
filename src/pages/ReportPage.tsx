@@ -52,15 +52,21 @@ export default function ReportPage() {
   const { interest, ability, values, careerTypes, createdAt } = currentAssessment;
   const matchedJobs = getMatchedJobs().slice(0, 6);
 
-  const radarData = (Object.keys(interest) as (keyof typeof interest)[]).map((k) => ({
-    dimension: INTEREST_LABELS[k],
-    score: interest[k],
-  }));
+  const radarData = useMemo(
+    () => (Object.keys(interest) as (keyof typeof interest)[]).map((k) => ({
+      dimension: INTEREST_LABELS[k],
+      score: interest[k],
+    })),
+    [interest]
+  );
 
-  const abilityData = (Object.keys(ability) as (keyof typeof ability)[]).map((k) => ({
-    dimension: ABILITY_LABELS[k],
-    score: ability[k],
-  }));
+  const abilityData = useMemo(
+    () => (Object.keys(ability) as (keyof typeof ability)[]).map((k) => ({
+      dimension: ABILITY_LABELS[k],
+      score: ability[k],
+    })),
+    [ability]
+  );
 
   const handleGeneratePlan = (jobId: string) => {
     setTargetJob(jobId);
@@ -68,11 +74,6 @@ export default function ReportPage() {
     setSelectedJob(null);
     navigate('/action');
   };
-
-  const radarData = (Object.keys(interest) as (keyof typeof interest)[]).map((k) => ({
-    dimension: INTEREST_LABELS[k],
-    score: interest[k],
-  }));
 
   return (
     <div className="container py-10 md:py-14">

@@ -28,26 +28,38 @@ export default function HistoryPage() {
   const [exportAssessment, setExportAssessment] = useState<Assessment | null>(null);
   const exportCardRef = useRef<HTMLDivElement>(null);
 
-  const sortedHistory = useMemo(
-    () => [...history].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [history]
-  );
+  const sortedHistory = useMemo(() => {
+    if (!Array.isArray(history)) return [];
+    const valid = history.filter((a) => a && a.id && a.createdAt);
+    return [...valid].sort((a, b) => {
+      const t1 = new Date(a.createdAt).getTime();
+      const t2 = new Date(b.createdAt).getTime();
+      if (Number.isNaN(t1) || Number.isNaN(t2)) return 0;
+      return t2 - t1;
+    });
+  }, [history]);
 
   const [assess1, assess2] = compareIds;
-  const a1 = sortedHistory.find((a) => a.id === assess1) || null;
-  const a2 = sortedHistory.find((a) => a.id === assess2) || null;
+  const a1 = (assess1 && sortedHistory.find((a) => a.id === assess1)) || null;
+  const a2 = (assess2 && sortedHistory.find((a) => a.id === assess2)) || null;
 
   const handleToggleCompare = (id: string) => {
+    if (typeof id !== 'string' || !id) return;
     setCompareIds((prev) => {
-      if (prev[0] === id) return [null, prev[1]];
-      if (prev[1] === id) return [prev[0], null];
-      if (!prev[0]) return [id, prev[1]];
-      if (!prev[1]) return [prev[0], id];
-      return [id, prev[1]];
+      const safePrev: [string | null, string | null] = [
+        typeof prev[0] === 'string' ? prev[0] : null,
+        typeof prev[1] === 'string' ? prev[1] : null,
+      ];
+      if (safePrev[0] === id) return [null, safePrev[1]];
+      if (safePrev[1] === id) return [safePrev[0], null];
+      if (!safePrev[0]) return [id, safePrev[1]];
+      if (!safePrev[1]) return [safePrev[0], id];
+      return [id, safePrev[1]];
     });
   };
 
   const handleExport = (assessment: Assessment) => {
+    if (!assessment) return;
     setExportAssessment(assessment);
     setShowExport(true);
   };

@@ -41,11 +41,15 @@ const GENERAL_TASKS = [
 ];
 
 export function generateDailyPlan(gaps: AbilityGap[], days: number = 30): DailyTask[] {
+  if (!Array.isArray(gaps)) gaps = [];
+  if (typeof days !== 'number' || Number.isNaN(days) || days <= 0 || !Number.isFinite(days)) days = 30;
   const tasks: DailyTask[] = [];
-  const highPriority = gaps.filter((g) => g.priority === 'high');
-  const mediumPriority = gaps.filter((g) => g.priority === 'medium');
-  const lowPriority = gaps.filter((g) => g.priority === 'low');
-  const allGaps = [...highPriority, ...mediumPriority, ...lowPriority];
+  const highPriority = gaps.filter((g) => g && g.priority === 'high');
+  const mediumPriority = gaps.filter((g) => g && g.priority === 'medium');
+  const lowPriority = gaps.filter((g) => g && g.priority === 'low');
+  const allGaps = [...highPriority, ...mediumPriority, ...lowPriority].filter(
+    (g) => g && g.ability && TASK_TEMPLATES[g.ability]
+  );
 
   for (let day = 1; day <= days; day++) {
     let pool: { title: string; desc: string; category: DailyTaskCategory }[] = [];
@@ -54,34 +58,41 @@ export function generateDailyPlan(gaps: AbilityGap[], days: number = 30): DailyT
       const gapIdx = (day - 1) % allGaps.length;
       const gap = allGaps[gapIdx];
       const templates = TASK_TEMPLATES[gap.ability];
-      pool = pool.concat(templates.map((t) => ({
-        ...t,
-        title: `【${ABILITY_LABELS[gap.ability]}】${t.title}`,
-      })));
+      if (templates && Array.isArray(templates)) {
+        pool = pool.concat(templates.map((t) => ({
+          ...t,
+          title: `【${ABILITY_LABELS[gap.ability] || gap.ability}】${t.title}`,
+        })));
+      }
     }
 
     pool = pool.concat(GENERAL_TASKS);
+    if (pool.length === 0) {
+      pool = [{ title: '职业探索', desc: '花10分钟思考职业发展方向', category: 'reflect' }];
+    }
 
     const taskIdx = (day - 1) % pool.length;
     const task = pool[taskIdx];
     const secondTask = pool[(taskIdx + 1) % pool.length];
 
-    tasks.push({
-      id: `task-${day}-1`,
-      day,
-      title: task.title,
-      description: task.desc,
-      category: task.category,
-      completed: false,
-    });
+    if (task) {
+      tasks.push({
+        id: `task-${day}-1`,
+        day,
+        title: task.title || '每日任务',
+        description: task.desc || '',
+        category: task.category || 'learn',
+        completed: false,
+      });
+    }
 
-    if (day % 3 === 0) {
+    if (day % 3 === 0 && secondTask) {
       tasks.push({
         id: `task-${day}-2`,
         day,
-        title: secondTask.title,
-        description: secondTask.desc,
-        category: secondTask.category,
+        title: secondTask.title || '每日任务',
+        description: secondTask.desc || '',
+        category: secondTask.category || 'learn',
         completed: false,
       });
     }
@@ -91,7 +102,9 @@ export function generateDailyPlan(gaps: AbilityGap[], days: number = 30): DailyT
 }
 
 export function calculatePlanProgress(tasks: DailyTask[]): number {
-  if (tasks.length === 0) return 0;
-  const done = tasks.filter((t) => t.completed).length;
-  return Math.round((done / tasks.length) * 100);
+  if (!Array.isArray(tasks) || tasks.length === 0) return 0;
+  const validTasks = tasks.filter((t) => t && typeof t.completed === 'boolean');
+  const done = validTasks.filter((t) => t.completed).length;
+  if (validTasks.length === 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((done / validTasks.length) * 100)));
 }

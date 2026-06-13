@@ -45,6 +45,11 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showCompare, setShowCompare] = useState(false);
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.slice(0, 50);
+    setSearch(val);
+  };
+
   const allJobs = getMatchedJobs();
 
   const industries = useMemo(() => {
@@ -97,9 +102,12 @@ export default function JobsPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-500" size={18} />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="搜索岗位名称或标签..."
             className="input-field pl-11"
+            maxLength={50}
+            autoComplete="off"
+            spellCheck={false}
           />
         </div>
 
@@ -184,19 +192,20 @@ export default function JobsPage() {
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredJobs.map((job, i) => {
-          const isFav = favoriteJobIds.includes(job.id);
-          const isSel = selectedJobIds.includes(job.id);
-          return (
-            <div
-              key={job.id}
-              className={cn(
-                'card p-6 group hover:shadow-lift transition-all animate-slide-up cursor-pointer',
-                isSel && 'ring-2 ring-sun-500'
-              )}
-              style={{ animationDelay: `${i * 50}ms` }}
-              onClick={() => setSelectedJob(job)}
+      {filteredJobs.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredJobs.map((job, i) => {
+            const isFav = favoriteJobIds.includes(job.id);
+            const isSel = selectedJobIds.includes(job.id);
+            return (
+              <div
+                key={job.id}
+                className={cn(
+                  'card p-6 group hover:shadow-lift transition-all animate-slide-up cursor-pointer',
+                  isSel && 'ring-2 ring-sun-500'
+                )}
+                style={{ animationDelay: `${i * 50}ms` }}
+                onClick={() => setSelectedJob(job)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
@@ -271,7 +280,29 @@ export default function JobsPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        <div className="card max-w-lg mx-auto p-10 text-center">
+          <div className="w-16 h-16 mx-auto rounded-full bg-ink-100 text-ink-500 flex items-center justify-center mb-5">
+            <Search size={32} />
+          </div>
+          <h2 className="font-display text-xl font-semibold text-ink-900 mb-2">
+            {onlyFavorites && favoriteJobIds.length === 0 ? '还没有收藏岗位' : '没有找到匹配的岗位'}
+          </h2>
+          <p className="text-ink-500 mb-4">
+            {onlyFavorites && favoriteJobIds.length === 0
+              ? '浏览岗位库，点击心形图标收藏心仪的岗位'
+              : search
+              ? '试试其他搜索词或调整筛选条件'
+              : '暂无岗位数据加载中...'}
+          </p>
+          {onlyFavorites && (
+            <button onClick={() => setOnlyFavorites(false)} className="btn-primary">
+              浏览全部岗位 <ArrowRight size={16} />
+            </button>
+          )}
+        </div>
+      )}
 
       <Modal
         open={!!selectedJob}
