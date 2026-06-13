@@ -50,7 +50,7 @@ export interface Assessment {
   ability: AbilityScores;
   values: CareerValue[];
   preferences: Record<string, number>;
-  careerTypes: { type: string; score: number; label: string }[];
+  careerTypes: { type: string; score: number; pct: number; label: string }[];
 }
 
 export type DailyTaskCategory = 'learn' | 'practice' | 'network' | 'reflect';

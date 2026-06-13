@@ -96,6 +96,7 @@ export function getTopCareerTypes(interest: DimensionScores) {
   const entries = (Object.keys(interest) as (keyof DimensionScores)[]).map((k) => ({
     type: k,
     score: interest[k],
+    pct: Math.round(normalizeScore(interest[k], 5)),
     label: INTEREST_LABELS[k],
   }));
   entries.sort((a, b) => b.score - a.score);

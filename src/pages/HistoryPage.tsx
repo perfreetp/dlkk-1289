@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useCareerStore } from '@/store/useCareerStore';
 import type { Assessment } from '@/types';
-import { INTEREST_LABELS, VALUE_LABELS } from '@/types';
+import { INTEREST_LABELS, ABILITY_LABELS, VALUE_LABELS, CareerValue } from '@/types';
 import RadarChart from '@/components/charts/RadarChart';
 import Modal from '@/components/ui/Modal';
 import { exportElementAsImage, formatDate, cn } from '@/utils/export';
@@ -184,7 +184,7 @@ export default function HistoryPage() {
                               </span>
                               <span className="font-medium text-ink-900 text-sm">{c.label}</span>
                             </div>
-                            <span className="text-xs text-ink-500">{(c.score / 5 * 100).toFixed(0)}分</span>
+                            <span className="text-xs text-ink-500">{c.pct}%</span>
                           </div>
                         ))}
                       </div>
@@ -265,6 +265,9 @@ export default function HistoryPage() {
                 </div>
               </div>
 
+              <div className="mb-2 flex items-center gap-2">
+                <div className="text-sm font-semibold text-ink-700">兴趣维度对比</div>
+              </div>
               <RadarChart
                 data={(Object.keys(a1.interest) as (keyof typeof a1.interest)[]).map((k) => ({
                   dimension: INTEREST_LABELS[k],
@@ -275,31 +278,74 @@ export default function HistoryPage() {
                   { key: 'A', color: '#F59E0B', name: `A · ${formatDate(a1.createdAt)}` },
                   { key: 'B', color: '#10B981', name: `B · ${formatDate(a2.createdAt)}` },
                 ]}
-                height={340}
+                height={300}
               />
 
-              <div className="mt-6 grid md:grid-cols-2 gap-4">
-                <div className="card p-5">
-                  <div className="text-sm font-semibold text-ink-700 mb-3">A 的核心价值观</div>
-                  <div className="space-y-1.5">
-                    {a1.values.slice(0, 3).map((v, i) => (
-                      <div key={v} className="flex items-center gap-2">
-                        <span className="text-xs text-sun-500 font-bold">#{i + 1}</span>
-                        <span className="text-sm text-ink-900">{VALUE_LABELS[v]}</span>
-                      </div>
-                    ))}
+              <div className="mt-8 mb-2 flex items-center gap-2">
+                <div className="text-sm font-semibold text-ink-700">能力自评对比</div>
+              </div>
+              <RadarChart
+                data={(Object.keys(a1.ability) as (keyof typeof a1.ability)[]).map((k) => ({
+                  dimension: ABILITY_LABELS[k],
+                  A: a1.ability[k],
+                  B: a2.ability[k],
+                }))}
+                series={[
+                  { key: 'A', color: '#F59E0B', name: `A · ${formatDate(a1.createdAt)}` },
+                  { key: 'B', color: '#10B981', name: `B · ${formatDate(a2.createdAt)}` },
+                ]}
+                height={300}
+              />
+
+              <div className="mt-8 mb-4 flex items-center gap-2">
+                <div className="text-sm font-semibold text-ink-700">价值观排序变化</div>
+              </div>
+              <div className="card p-5">
+                <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+                  <div className="text-xs font-semibold text-sun-500 text-center">
+                    A · {formatDate(a1.createdAt)}
                   </div>
-                </div>
-                <div className="card p-5">
-                  <div className="text-sm font-semibold text-ink-700 mb-3">B 的核心价值观</div>
-                  <div className="space-y-1.5">
-                    {a2.values.slice(0, 3).map((v, i) => (
-                      <div key={v} className="flex items-center gap-2">
-                        <span className="text-xs text-mint-500 font-bold">#{i + 1}</span>
-                        <span className="text-sm text-ink-900">{VALUE_LABELS[v]}</span>
-                      </div>
-                    ))}
+                  <div className="w-6" />
+                  <div className="text-xs font-semibold text-mint-500 text-center">
+                    B · {formatDate(a2.createdAt)}
                   </div>
+
+                  {(Object.keys(VALUE_LABELS) as CareerValue[]).map((v) => {
+                    const rankA = a1.values.indexOf(v) + 1;
+                    const rankB = a2.values.indexOf(v) + 1;
+                    const diff = rankA - rankB;
+                    return (
+                      <div key={v} className="contents">
+                        <div className={cn(
+                          'px-4 py-2.5 rounded-xl text-sm flex items-center justify-between',
+                          rankA <= 2 ? 'bg-sun-100 text-ink-900' : 'bg-ink-50 text-ink-700'
+                        )}>
+                          <span className="font-medium">{VALUE_LABELS[v]}</span>
+                          <span className="text-xs font-bold text-sun-500">#{rankA}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center text-xs font-bold">
+                          {diff > 0 ? (
+                            <span className="text-mint-500 flex items-center gap-0.5">
+                              ↑{diff}
+                            </span>
+                          ) : diff < 0 ? (
+                            <span className="text-rose-500 flex items-center gap-0.5">
+                              ↓{Math.abs(diff)}
+                            </span>
+                          ) : (
+                            <span className="text-ink-400">—</span>
+                          )}
+                        </div>
+                        <div className={cn(
+                          'px-4 py-2.5 rounded-xl text-sm flex items-center justify-between',
+                          rankB <= 2 ? 'bg-mint-100 text-ink-900' : 'bg-ink-50 text-ink-700'
+                        )}>
+                          <span className="font-medium">{VALUE_LABELS[v]}</span>
+                          <span className="text-xs font-bold text-mint-500">#{rankB}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </>

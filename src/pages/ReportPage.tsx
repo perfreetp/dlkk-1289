@@ -1,14 +1,36 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles, Star, TrendingUp, Award, Target } from 'lucide-react';
+import {
+  ArrowRight,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Award,
+  Target,
+  DollarSign,
+  Briefcase,
+  BookOpen,
+  Heart,
+} from 'lucide-react';
 import { useCareerStore } from '@/store/useCareerStore';
 import RadarChart from '@/components/charts/RadarChart';
 import ProgressBar from '@/components/ui/ProgressBar';
+import Modal from '@/components/ui/Modal';
+import type { Job } from '@/types';
 import { INTEREST_LABELS, ABILITY_LABELS, VALUE_LABELS } from '@/types';
 import { formatDate, cn } from '@/utils/export';
 
 export default function ReportPage() {
   const navigate = useNavigate();
-  const { currentAssessment, getMatchedJobs, generateActionPlan, setTargetJob } = useCareerStore();
+  const {
+    currentAssessment,
+    getMatchedJobs,
+    generateActionPlan,
+    setTargetJob,
+    toggleFavorite,
+    favoriteJobIds,
+  } = useCareerStore();
+  const [selectedJob, setSelectedJob] = useState<(Job & { matchScore: number }) | null>(null);
 
   if (!currentAssessment) {
     return (
@@ -43,8 +65,14 @@ export default function ReportPage() {
   const handleGeneratePlan = (jobId: string) => {
     setTargetJob(jobId);
     generateActionPlan(jobId);
+    setSelectedJob(null);
     navigate('/action');
   };
+
+  const radarData = (Object.keys(interest) as (keyof typeof interest)[]).map((k) => ({
+    dimension: INTEREST_LABELS[k],
+    score: interest[k],
+  }));
 
   return (
     <div className="container py-10 md:py-14">
@@ -73,7 +101,7 @@ export default function ReportPage() {
                     </span>
                     <span className="font-display text-lg font-semibold">{ct.label}</span>
                   </div>
-                  <span className="text-sm text-sun-400">{(ct.score / 5 * 100).toFixed(0)}分</span>
+                  <span className="text-sm text-sun-400">{ct.pct}%</span>
                 </div>
               ))}
             </div>
@@ -147,18 +175,34 @@ export default function ReportPage() {
               key={job.id}
               className="card p-6 group hover:shadow-lift hover:-translate-y-1 transition-all animate-slide-up cursor-pointer"
               style={{ animationDelay: `${i * 80}ms` }}
-              onClick={() => handleGeneratePlan(job.id)}
+              onClick={() => setSelectedJob(job)}
             >
               <div className="flex items-start justify-between mb-3">
-                <div>
+                <div className="flex-1 min-w-0">
                   <h3 className="font-display text-lg font-semibold text-ink-900 group-hover:text-sun-500 transition-colors">
                     {job.title}
                   </h3>
                   <p className="text-sm text-ink-500">{job.industry}</p>
                 </div>
-                <span className="tag bg-sun-100 text-sun-500 text-sm font-bold px-3 py-1">
-                  {job.matchScore}%
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(job.id);
+                    }}
+                    className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center transition-all',
+                      favoriteJobIds.includes(job.id)
+                        ? 'bg-rose-100 text-rose-500'
+                        : 'bg-ink-100 text-ink-500 hover:bg-rose-50 hover:text-rose-500'
+                    )}
+                  >
+                    <Heart size={16} fill={favoriteJobIds.includes(job.id) ? 'currentColor' : 'none'} />
+                  </button>
+                  <span className="tag bg-sun-100 text-sun-500 text-sm font-bold px-3 py-1">
+                    {job.matchScore}%
+                  </span>
+                </div>
               </div>
               <ProgressBar value={job.matchScore} color="sun" showLabel={false} className="mb-4" />
               <div className="flex items-center justify-between">
@@ -172,12 +216,102 @@ export default function ReportPage() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-ink-100 text-sm text-ink-500 group-hover:text-sun-500 transition-colors flex items-center gap-1">
-                生成行动计划 <ArrowRight size={14} />
+                查看岗位详情 <ArrowRight size={14} />
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <Modal
+        open={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        title={selectedJob?.title}
+        className="max-w-3xl"
+      >
+        {selectedJob && (
+          <div className="p-6">
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              <span className="tag bg-sun-100 text-sun-500 text-sm">
+                <Briefcase size={14} /> {selectedJob.industry}
+              </span>
+              <span className="tag bg-mint-100 text-mint-500 text-sm">
+                <DollarSign size={14} /> {selectedJob.salaryRange}
+              </span>
+              <span className="tag bg-ink-100 text-ink-700 text-sm">
+                <TrendingUp size={14} /> 成长空间 {selectedJob.growthScore}/5
+              </span>
+              <span className="tag bg-sun-100 text-sun-500 text-sm font-bold">
+                匹配度 {selectedJob.matchScore}%
+              </span>
+              {selectedJob.tags.map((t) => (
+                <span key={t} className="tag bg-ink-100 text-ink-700 text-sm">
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-700 mb-3">
+                <BookOpen size={16} className="text-sun-500" /> 日常工作内容
+              </div>
+              <p className="text-ink-700 leading-relaxed">{selectedJob.dailyDescription}</p>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-700 mb-3">
+                <Target size={16} className="text-mint-500" /> 能力要求
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(selectedJob.requiredAbilities).map(([k, v]) => (
+                  <div key={k} className="p-3 bg-ink-100/60 rounded-xl">
+                    <div className="text-sm font-medium text-ink-900 mb-1">
+                      {ABILITY_LABELS[k as keyof typeof ABILITY_LABELS]}
+                    </div>
+                    <ProgressBar value={(v as number) * 20} color="mint" showLabel={false} size="sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-700 mb-3">
+                <TrendingUp size={16} className="text-sun-500" /> 成长路径
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedJob.growthPath.map((p, i) => (
+                  <div key={p} className="flex items-center gap-2">
+                    <span className="px-4 py-2 bg-white border border-ink-200 rounded-xl text-sm font-medium text-ink-900">
+                      {p}
+                    </span>
+                    {i < selectedJob.growthPath.length - 1 && <ArrowRight size={16} className="text-ink-300" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => toggleFavorite(selectedJob.id)}
+                className={cn(
+                  'btn-ghost flex-1',
+                  favoriteJobIds.includes(selectedJob.id) &&
+                    'bg-rose-100 text-rose-500 border-rose-300 hover:bg-rose-100'
+                )}
+              >
+                <Heart
+                  size={16}
+                  fill={favoriteJobIds.includes(selectedJob.id) ? 'currentColor' : 'none'}
+                />
+                {favoriteJobIds.includes(selectedJob.id) ? '已收藏' : '收藏岗位'}
+              </button>
+              <button onClick={() => handleGeneratePlan(selectedJob.id)} className="btn-primary flex-1">
+                生成行动计划 <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <div className="flex justify-center gap-4">
         <button onClick={() => navigate('/')} className="btn-ghost">

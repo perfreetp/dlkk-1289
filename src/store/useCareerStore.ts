@@ -106,6 +106,7 @@ export const useCareerStore = create<CareerStore>()(
           currentStep: 0,
           answers: {},
           valueRanking: DEFAULT_VALUES,
+          selectedJobIds: [],
           abilityGaps: [],
           dailyTasks: [],
           targetJobId: null,

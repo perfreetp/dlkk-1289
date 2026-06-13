@@ -41,6 +41,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState('');
   const [industry, setIndustry] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('match');
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [showCompare, setShowCompare] = useState(false);
 
@@ -53,6 +54,9 @@ export default function JobsPage() {
 
   const filteredJobs = useMemo(() => {
     let list = [...allJobs];
+    if (onlyFavorites) {
+      list = list.filter((j) => favoriteJobIds.includes(j.id));
+    }
     if (search) {
       list = list.filter(
         (j) =>
@@ -69,7 +73,7 @@ export default function JobsPage() {
       return b.matchScore - a.matchScore;
     });
     return list;
-  }, [allJobs, search, industry, sortBy]);
+  }, [allJobs, search, industry, sortBy, onlyFavorites, favoriteJobIds]);
 
   const selectedForCompare = selectedJobIds
     .map((id) => allJobs.find((j) => j.id === id))
@@ -113,6 +117,27 @@ export default function JobsPage() {
             ))}
           </select>
         </div>
+
+        <button
+          onClick={() => setOnlyFavorites(!onlyFavorites)}
+          className={cn(
+            'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all',
+            onlyFavorites
+              ? 'bg-rose-100 text-rose-500 shadow-sm'
+              : 'bg-ink-100 text-ink-700 hover:bg-ink-300/50'
+          )}
+        >
+          <Heart size={16} fill={onlyFavorites ? 'currentColor' : 'none'} />
+          只看收藏
+          {favoriteJobIds.length > 0 && (
+            <span className={cn(
+              'ml-0.5 text-xs font-bold',
+              onlyFavorites ? 'text-rose-500' : 'text-ink-500'
+            )}>
+              {favoriteJobIds.length}
+            </span>
+          )}
+        </button>
 
         <div className="flex gap-1 bg-ink-100 rounded-full p-1">
           {[
