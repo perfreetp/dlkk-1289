@@ -38,8 +38,12 @@ export default function AssessmentPage() {
   const isStepComplete = (step: number) => {
     if (step === 0) return true;
     if (step === 3) return valueRanking.length === 6;
-    const qs = currentList[step > 3 ? step - 1 : step - 1] || [];
-    return qs.every((q) => answers[q.id] != null);
+    let qs: typeof questions = [];
+    if (step === 1) qs = interestQuestions;
+    else if (step === 2) qs = abilityQuestions;
+    else if (step === 4) qs = preferenceQuestions;
+    if (qs.length === 0) return false;
+    return qs.every((q) => typeof answers[q.id] === 'number' && !Number.isNaN(answers[q.id]));
   };
 
   const handleNext = () => {

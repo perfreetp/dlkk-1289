@@ -58,7 +58,31 @@ export default function ActionPage() {
     return w;
   }, [dailyTasks]);
 
-  if (!targetJob || !currentAssessment) {
+  if (!currentAssessment) {
+    return (
+      <div className="container py-10 md:py-14">
+        <div className="mb-8">
+          <h1 className="font-display text-4xl md:text-5xl font-semibold text-ink-900 mb-3">行动清单</h1>
+          <p className="text-ink-500 text-lg">基于你的测评结果，生成专属的 30 天提升计划</p>
+        </div>
+
+        <div className="card max-w-lg mx-auto p-10 text-center">
+          <div className="w-16 h-16 mx-auto rounded-full bg-sun-100 text-sun-500 flex items-center justify-center mb-5">
+            <Sparkles size={32} />
+          </div>
+          <h2 className="font-display text-2xl font-semibold text-ink-900 mb-3">先完成职业诊断</h2>
+          <p className="text-ink-500 mb-6">
+            完成 3 分钟测评后，我们会为你分析能力差距、推荐目标岗位，并自动生成 30 天行动清单
+          </p>
+          <button onClick={() => navigate('/')} className="btn-primary">
+            去做测评 <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!targetJob) {
     const recommendedJobs = jobs.slice(0, 4);
     return (
       <div className="container py-10 md:py-14">
@@ -85,7 +109,9 @@ export default function ActionPage() {
               {recommendedJobs.map((job) => (
                 <button
                   key={job.id}
-                  onClick={() => generateActionPlan(job.id)}
+                  onClick={() => {
+                    generateActionPlan(job.id);
+                  }}
                   className="card p-5 text-left hover:shadow-lift hover:-translate-y-1 transition-all"
                 >
                   <div className="font-display text-lg font-semibold text-ink-900 mb-1">{job.title}</div>

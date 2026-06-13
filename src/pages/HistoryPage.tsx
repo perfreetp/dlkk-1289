@@ -15,13 +15,15 @@ import {
 import { useCareerStore } from '@/store/useCareerStore';
 import type { Assessment } from '@/types';
 import { INTEREST_LABELS, ABILITY_LABELS, VALUE_LABELS, CareerValue } from '@/types';
+import { matchJobs } from '@/utils/matching';
+import { jobs as allJobsData } from '@/data/jobs';
 import RadarChart from '@/components/charts/RadarChart';
 import Modal from '@/components/ui/Modal';
 import { exportElementAsImage, formatDate, cn } from '@/utils/export';
 
 export default function HistoryPage() {
   const navigate = useNavigate();
-  const { history, startReassessment, getMatchedJobs } = useCareerStore();
+  const { history, startReassessment } = useCareerStore();
   const [compareIds, setCompareIds] = useState<[string | null, string | null]>([null, null]);
   const [showCompare, setShowCompare] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -134,8 +136,8 @@ export default function HistoryPage() {
         <div className="space-y-5">
           {sortedHistory.map((assess, i) => {
             const isSelected = compareIds.includes(assess.id);
-            const matched = getMatchedJobs();
-            const topJob = matched[0];
+            const matchedForAssess = matchJobs(allJobsData, assess);
+            const topJob = matchedForAssess[0];
             return (
               <div key={assess.id} className="relative pl-14 md:pl-16 animate-slide-up" style={{ animationDelay: `${i * 60}ms` }}>
                 <div className="absolute left-0 md:left-1 top-0 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white border-4 border-sun-400 flex items-center justify-center shadow-card">
